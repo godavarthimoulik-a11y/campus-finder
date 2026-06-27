@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>To‑Do App</title>
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    .todo-input{display:flex;gap:.5rem;margin-bottom:.75rem}
+    .todo-list{list-style:none;padding:0}
+    .todo-list li{display:flex;justify-content:space-between;align-items:center;padding:.5rem;border-bottom:1px solid #eee}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Interactive To‑Do App</h1>
+    <div>
+      <div class="todo-input">
+        <input id="newTask" placeholder="Add a task" />
+        <button id="addTask" class="btn primary">Add</button>
+      </div>
+      <ul id="tasks" class="todo-list"></ul>
+    </div>
+    <p><a href="../index.html">Back</a></p>
+  </div>
+  <script>
+    const tasksEl = document.getElementById('tasks');
+    const newTask = document.getElementById('newTask');
+    const addTask = document.getElementById('addTask');
+    const storageKey = 'demo_todos_v1';
+    let tasks = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    function render(){
+      tasksEl.innerHTML = '';
+      tasks.forEach((t,i)=>{
+        const li = document.createElement('li');
+        li.innerHTML = `<span>${escapeHtml(t.text)}</span><div><button data-i="${i}" class="btn">Del</button></div>`;
+        tasksEl.appendChild(li);
+      });
+    }
+    function escapeHtml(s){return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+    addTask.addEventListener('click',()=>{
+      const v = newTask.value.trim(); if(!v) return; tasks.push({text:v}); localStorage.setItem(storageKey, JSON.stringify(tasks)); newTask.value=''; render();
+    });
+    tasksEl.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button'); if(!btn) return; const i = Number(btn.dataset.i); tasks.splice(i,1); localStorage.setItem(storageKey, JSON.stringify(tasks)); render();
+    });
+    render();
+  </script>
+</body>
+</html>

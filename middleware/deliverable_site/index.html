@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Web Programming — Moulik Godavarthi</title>
+  <meta name="author" content="moulik.godavarthi">
+  <meta name="description" content="A polished working web programming deliverable showcasing responsive layout, interactive components, and a demo contact form.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1 class="brand">Moulik — Web Programming</h1>
+      <nav class="nav" id="nav">
+        <a href="#projects">Projects</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <button id="navToggle" class="nav-toggle" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <h2>Clean, Responsive Web Programming</h2>
+        <p>Interactive examples, accessible markup, and modern best practices — ready to deploy.</p>
+        <a class="cta" href="#projects">View Projects</a>
+      </div>
+    </section>
+
+    <section id="projects" class="container projects">
+      <h3>Featured Projects</h3>
+      <div class="grid">
+        <article class="card">
+          <h4>Portfolio Template</h4>
+          <p>Responsive portfolio with gallery and accessible navigation.</p>
+          <a href="#" class="btn">Preview</a>
+        </article>
+        <article class="card">
+          <h4>Interactive To‑Do App</h4>
+          <p>Vanilla JS app demonstrating state, storage, and keyboard access.</p>
+          <a href="#" class="btn">Preview</a>
+        </article>
+        <article class="card">
+          <h4>Static Blog Starter</h4>
+          <p>Fast, semantic HTML ready for SSG or simple hosting.</p>
+          <a href="#" class="btn">Preview</a>
+        </article>
+      </div>
+    </section>
+
+    <section id="about" class="container about">
+      <h3>About</h3>
+      <p>This deliverable was prepared for <strong>web programming</strong> by <em>moulik.godavarthi</em>. It demonstrates best-practice HTML, CSS, and JavaScript for small production sites.</p>
+    </section>
+
+    <section id="contact" class="container contact">
+      <h3>Contact</h3>
+      <form id="contactForm" novalidate>
+        <label>
+          Name
+          <input type="text" name="name" required minlength="2">
+        </label>
+        <label>
+          Email
+          <input type="email" name="email" required>
+        </label>
+        <label>
+          Message
+          <textarea name="message" rows="5" required></textarea>
+        </label>
+        <div class="form-actions">
+          <button type="submit" class="btn primary">Send</button>
+          <span id="formStatus" role="status" aria-live="polite"></span>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <small>&copy; <span id="year"></span> moulik.godavarthi — domain: web programming</small>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+// Frontend app script: fetch colleges from /api/colleges, render list, search, sort, and show details
+document.addEventListener('DOMContentLoaded', () => {
+  const state = { colleges: [], filtered: [] };
+  const grid = document.getElementById('colleges-grid');
+  const searchInput = document.getElementById('search-input');
+  const sortSelect = document.getElementById('sort-select');
+  const heroHeading = document.getElementById('main-heading');
+  const ariaLive = createAriaLive();
+
+  // small loading UI
+  function showLoader(){
+    grid.innerHTML = '<div class="card" style="text-align:center;padding:36px">Loading colleges...</div>';
+  }
+
+  function createAriaLive(){
+    let r = document.getElementById('aria-live-region');
+    if(!r){
+      r = document.createElement('div');
+      r.id = 'aria-live-region';
+      r.setAttribute('aria-live','polite');
+      r.className = 'hidden';
+      document.body.appendChild(r);
+    }
+    return r;
+  }
+
+  function announce(msg){ ariaLive.textContent = msg; }
+
+  async function fetchColleges(){
+    showLoader();
+    try{
+      const res = await fetch('/api/colleges');
+      if(!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      state.colleges = Array.isArray(data) ? data : [];
+      state.filtered = state.colleges.slice();
+      renderColleges(state.filtered);
+      announce(`${state.filtered.length} colleges loaded`);
+      // hydrate icons if lucide is available
+      if(window.lucide && typeof lucide.createIcons === 'function') setTimeout(()=>lucide.createIcons(), 50);
+    }catch(err){
+      grid.innerHTML = '<div class="card" style="text-align:center;padding:24px;color:var(--muted)">Unable to load colleges — try again later.</div>';
+      console.error(err);
+      announce('Unable to load colleges');
+    }
+  }
+
+  function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;" })[c]); }
+
+  function renderColleges(list){
+    if(!list || list.length === 0){
+      grid.innerHTML = '<div class="card" style="text-align:center;padding:24px;color:var(--muted)">No colleges found.</div>';
+      return;
+    }
+    grid.innerHTML = list.map(c=>{
+      const streams = (c.streams || []).slice(0,3).map(s=>`<span class="tag">${escapeHtml(s)}</span>`).join(' ');
+      const rating = c.avg_rating ? Number(c.avg_rating).toFixed(1) : '—';
+      return `
+      <article class="card" data-id="${c.id}" aria-labelledby="col-${c.id}-name">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+          <div>
+            <div style="font-weight:700;font-size:16px" id="col-${c.id}-name">${escapeHtml(c.name)}</div>
+            <div class="text-muted" style="font-size:13px">${escapeHtml(c.city)}, ${escapeHtml(c.state)}</div>
+            <div style="margin-top:8px">${streams}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:700">${rating}</div>
+            <div class="text-muted" style="font-size:12px">${c.reviews_count || 0} reviews</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="form-btn form-btn-secondary details-btn" data-id="${c.id}">View Details</button>
+          <button class="form-btn form-btn-primary shortlist-btn" data-id="${c.id}">Shortlist</button>
+        </div>
+      </article>`;
+    }).join('');
+  }
+
+  // Debounce helper
+  function debounce(fn, wait=300){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), wait); }; }
+
+  function applyFilters(){
+    const q = (searchInput.value || '').trim().toLowerCase();
+    let list = state.colleges.slice();
+    if(q){
+      list = list.filter(c => (c.name||'').toLowerCase().includes(q) || (c.city||'').toLowerCase().includes(q) || (c.streams||[]).join(' ').toLowerCase().includes(q));
+    }
+    // sort
+    const sort = sortSelect.value || 'default';
+    if(sort === 'rating-desc') list.sort((a,b)=> (b.avg_rating||0) - (a.avg_rating||0));
+    if(sort === 'fees-asc' || sort === 'fees-desc'){
+      // approximate using first course fee; requires additional fetch for details otherwise leave as-is
+      list.sort((a,b)=>0);
+    }
+    if(sort === 'name-asc') list.sort((a,b)=> (a.name||'').localeCompare(b.name||''));
+    state.filtered = list;
+    renderColleges(list);
+    announce(`${list.length} results`);
+    // refresh icons
+    if(window.lucide && typeof lucide.createIcons === 'function') setTimeout(()=>lucide.createIcons(), 30);
+  }
+
+  const debouncedFilter = debounce(applyFilters, 220);
+  searchInput.addEventListener('input', debouncedFilter);
+  sortSelect.addEventListener('change', applyFilters);
+
+  // Delegated click handlers for details & shortlist
+  grid.addEventListener('click', async (e)=>{
+    const detailsBtn = e.target.closest('.details-btn');
+    const shortlistBtn = e.target.closest('.shortlist-btn');
+    if(detailsBtn){
+      const id = detailsBtn.dataset.id;
+      openDetailModal(id);
+      return;
+    }
+    if(shortlistBtn){
+      const id = shortlistBtn.dataset.id;
+      // naive shortlist in localStorage
+      const s = JSON.parse(localStorage.getItem('shortlist')||'[]');
+      if(!s.includes(Number(id))) s.push(Number(id));
+      localStorage.setItem('shortlist', JSON.stringify(s));
+      showToast('Added to shortlist');
+      const badge = document.getElementById('shortlist-badge');
+      if(badge){ badge.style.display='inline-block'; badge.textContent = s.length; }
+      return;
+    }
+  });
+
+  async function openDetailModal(id){
+    try{
+      const res = await fetch(`/api/colleges/${id}`);
+      if(!res.ok) throw new Error('Failed to load details');
+      const data = await res.json();
+      populateDetailModal(data);
+      document.getElementById('detail-modal').classList.add('active');
+      document.getElementById('detail-modal-close').focus();
+      announce(`Opened details for ${data.college.name}`);
+    }catch(err){ console.error(err); showToast('Unable to load details'); }
+  }
+
+  function populateDetailModal(payload){
+    const c = payload.college || {};
+    document.getElementById('detail-name').textContent = c.name || '';
+    document.getElementById('detail-description').textContent = c.description || '';
+    document.getElementById('detail-website').innerHTML = c.website ? `<a href="${escapeHtml(c.website)}" target="_blank" rel="noopener noreferrer">visit website</a>` : '';
+    document.getElementById('detail-email').textContent = c.email || '';
+    document.getElementById('detail-phone').textContent = c.phone || '';
+    // streams
+    const streamsRow = document.getElementById('detail-streams-row'); if(streamsRow){ streamsRow.innerHTML = (c.streams||[]).map(s=>`<span class="tag">${escapeHtml(s)}</span>`).join(' '); }
+    // courses
+    const coursesBody = document.getElementById('detail-courses-table-body'); if(coursesBody){
+      coursesBody.innerHTML = (payload.courses||[]).map(r=>`<tr><td>${escapeHtml(r.title)}</td><td>${escapeHtml(r.duration)}</td><td style="text-align:right">₹${Number(r.annual_fee||0).toLocaleString()}</td></tr>`).join('');
+    }
+    // reviews
+    const reviewsTimeline = document.getElementById('detail-reviews-timeline'); if(reviewsTimeline){
+      reviewsTimeline.innerHTML = (payload.reviews||[]).map(rv=>`<div style="margin-bottom:12px"><div style="font-weight:700">${escapeHtml(rv.author||'Anonymous')} <span class="text-muted" style="font-weight:600">— ${rv.rating}★</span></div><div class="text-muted" style="font-size:13px">${escapeHtml(rv.comment||'')}</div></div>`).join('');
+    }
+  }
+
+  // Basic toast
+  function showToast(msg, ms=2200){
+    const t = document.getElementById('toast-container');
+    if(!t) return; const el = document.createElement('div'); el.className='toast'; el.textContent=msg; el.style.padding='8px 12px'; el.style.background='rgba(0,0,0,0.5)'; el.style.borderRadius='8px'; el.style.marginTop='8px'; t.appendChild(el); setTimeout(()=>el.remove(), ms);
+  }
+
+  // modal close
+  const detailClose = document.getElementById('detail-modal-close'); if(detailClose){ detailClose.addEventListener('click', ()=>{ document.getElementById('detail-modal').classList.remove('active'); }); }
+
+  // initial load
+  fetchColleges();
+});

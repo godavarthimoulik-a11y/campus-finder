@@ -1,0 +1,766 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusFinder India | Search & Discover Colleges</title>
+  <meta name="description" content="Explore, compare, and shortlist top-tier colleges and universities in India. High-quality info, fees, reviews, and a complete admin control center.">
+  <link rel="canonical" href="http://localhost:8080/">
+  <meta name="theme-color" content="#071428">
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="preload" href="styles.min.css" as="style">
+  <link rel="stylesheet" href="styles.min.css">
+  <script defer src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-heading">Skip to content</a>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+  
+  <script>
+    // Load colleges data immediately
+    let allColleges = [];
+    let filteredColleges = [];
+    
+    async function loadColleges() {
+      try {
+        const res = await fetch('/api/colleges');
+        const data = await res.json();
+        allColleges = data;
+        filteredColleges = data;
+        renderColleges();
+        updateStats();
+        populateFilters();
+      } catch (e) {
+        console.error('Error loading colleges:', e);
+        document.getElementById('colleges-grid').innerHTML = '<p style="color: red; padding: 20px;">Error loading colleges data. Please refresh.</p>';
+      }
+    }
+    
+    function renderColleges() {
+      const grid = document.getElementById('colleges-grid');
+      grid.innerHTML = filteredColleges.length ? filteredColleges.map(college => `
+        <div class="college-card">
+          <div class="card-header" style="background: ${college.gradient || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}">
+            <div class="card-badge">${college.streams || 'Engineering'}</div>
+            <button class="card-compare-btn" onclick="toggleCompare(${college.id})" title="Compare">
+              <i data-lucide="scale-3d"></i>
+            </button>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">${college.name}</h3>
+            <p class="card-location"><i data-lucide="map-pin" style="width: 16px; height: 16px;"></i> ${college.city}, ${college.state}</p>
+            <div class="card-rating">
+              <span class="stars">${'★'.repeat(Math.round(college.avg_rating))}${'☆'.repeat(5-Math.round(college.avg_rating))}</span>
+              <span class="rating-num">${college.avg_rating.toFixed(1)}</span>
+              <span class="reviews-count">(${college.reviews_count} reviews)</span>
+            </div>
+          </div>
+          <button class="card-action-btn" onclick="viewCollege(${college.id})">
+            View Details <i data-lucide="arrow-right" style="width: 16px; height: 16px; margin-left: 4px;"></i>
+          </button>
+        </div>
+      `).join('') : '<p style="padding: 40px; text-align: center; color: var(--text-secondary);">No colleges found matching your criteria.</p>';
+      
+      // Reinitialize lucide icons
+      if(window.lucide) lucide.createIcons();
+    }
+    
+    function updateStats() {
+      const stats = {
+        colleges: allColleges.length,
+        cities: new Set(allColleges.map(c => c.city)).size,
+        avgRating: (allColleges.reduce((sum, c) => sum + c.avg_rating, 0) / allColleges.length).toFixed(1)
+      };
+      
+      document.getElementById('stat-total-colleges').textContent = stats.colleges;
+      document.getElementById('stat-cities').textContent = stats.cities;
+      document.getElementById('stat-avg-rating').textContent = stats.avgRating;
+      
+      // Calculate total courses
+      fetch('/api/colleges')
+        .then(r => r.json())
+        .then(colleges => {
+          let totalCourses = 0;
+          Promise.all(colleges.map(c => fetch(`/api/colleges/${c.id}`).then(r => r.json())))
+            .then(details => {
+              totalCourses = details.reduce((sum, d) => sum + (d.courses ? d.courses.length : 0), 0);
+              document.getElementById('stat-courses').textContent = totalCourses;
+            });
+        });
+    }
+    
+    function populateFilters() {
+      const cities = [...new Set(allColleges.map(c => c.city))].sort();
+      const citySelect = document.getElementById('city-filter');
+      cities.forEach(city => {
+        const option = document.createElement('option');
+        option.value = city;
+        option.textContent = city;
+        citySelect.appendChild(option);
+      });
+    }
+    
+    function viewCollege(id) {
+      window.location.hash = `college/${id}`;
+      loadCollegeDetail(id);
+    }
+    
+    async function loadCollegeDetail(id) {
+      try {
+        const res = await fetch(`/api/colleges/${id}`);
+        const { college, courses, reviews } = await res.json();
+        
+        document.getElementById('detail-name').textContent = college.name;
+        document.getElementById('detail-description').textContent = college.description;
+        document.getElementById('detail-website').innerHTML = `<a href="${college.website}" target="_blank">${college.website}</a>`;
+        document.getElementById('detail-email').textContent = college.email;
+        document.getElementById('detail-phone').textContent = college.phone;
+        document.getElementById('detail-banner-theme').style.background = college.gradient;
+        
+        const coursesHtml = courses.length ? courses.map(c => `
+          <tr>
+            <td>${c.title}</td>
+            <td>${c.duration}</td>
+            <td style="text-align: right;">₹${(c.annual_fee || 0).toLocaleString('en-IN')}</td>
+          </tr>
+        `).join('') : '<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">No courses listed</td></tr>';
+        
+        document.querySelector('.courses-table tbody').innerHTML = coursesHtml;
+        
+        const reviewsHtml = reviews.length ? reviews.map(r => `
+          <div class="review-item">
+            <div class="review-header">
+              <span class="review-author">${r.author}</span>
+              <span class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+            </div>
+            <p class="review-text">${r.comment}</p>
+          </div>
+        `).join('') : '<p style="color: var(--text-secondary);">No reviews yet.</p>';
+        
+        document.getElementById('reviews-container').innerHTML = reviewsHtml;
+        
+        document.getElementById('detail-modal').classList.add('open');
+      } catch (e) {
+        console.error('Error loading college details:', e);
+      }
+    }
+    
+    function toggleCompare(id) {
+      console.log('Compare:', id);
+    }
+    
+    // Event listeners
+    document.getElementById('search-input').addEventListener('keyup', function() {
+      const q = this.value.toLowerCase();
+      filteredColleges = allColleges.filter(c => 
+        c.name.toLowerCase().includes(q) ||
+        c.city.toLowerCase().includes(q) ||
+        (c.streams && c.streams.toLowerCase().includes(q))
+      );
+      renderColleges();
+    });
+    
+    document.getElementById('city-filter').addEventListener('change', function() {
+      const city = this.value;
+      filteredColleges = city === 'all' ? allColleges : allColleges.filter(c => c.city === city);
+      renderColleges();
+    });
+    
+    document.getElementById('sort-select').addEventListener('change', function() {
+      const sort = this.value;
+      if(sort === 'rating-desc') filteredColleges.sort((a, b) => b.avg_rating - a.avg_rating);
+      else if(sort === 'name-asc') filteredColleges.sort((a, b) => a.name.localeCompare(b.name));
+      renderColleges();
+    });
+    
+    document.getElementById('detail-modal-close').addEventListener('click', function() {
+      document.getElementById('detail-modal').classList.remove('open');
+    });
+    
+    document.getElementById('nav-explore-btn').addEventListener('click', function() {
+      document.getElementById('explore-view').classList.add('active');
+      document.getElementById('admin-view').classList.remove('active');
+      document.getElementById('shortlist-view').classList.remove('active');
+    });
+    
+    // Load data on page load
+    window.addEventListener('load', loadColleges);
+  </script>
+
+  <!-- Header Section -->
+  <header>
+    <div class="container nav-container">
+      <div class="logo" id="logo-btn">
+        <i data-lucide="graduation-cap"></i>
+        <span>CampusFinder<span style="font-weight: 400; font-size: 16px; margin-left: 4px; opacity: 0.8;">India</span></span>
+      </div>
+      <div class="nav-links">
+        <button class="nav-btn active" id="nav-explore-btn">
+          <i data-lucide="search"></i> Explore
+        </button>
+        <button class="nav-btn" id="nav-shortlist-btn">
+          <i data-lucide="heart"></i> Shortlist <span id="shortlist-badge" style="display:none; font-size: 10px; padding: 2px 6px; background-color: var(--error); color: white; border-radius: 9999px; margin-left: 4px;">0</span>
+        </button>
+        <button class="nav-btn" id="nav-admin-btn">
+          <i data-lucide="layout-dashboard"></i> Admin Portal
+        </button>
+        <button class="theme-toggle-btn" id="theme-toggle-btn" title="Toggle Theme">
+          <i data-lucide="sun" id="theme-icon-sun" style="display:none;"></i>
+          <i data-lucide="moon" id="theme-icon-moon"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Hero Banner -->
+    <section class="hero" id="hero-banner">
+      <h1 class="hero-title" id="main-heading">Find Your Ideal College</h1>
+      <p class="hero-subtitle">Search, discover, compare, and manage top universities and course offerings in India. Find correct contact info, courses, fees, and real student reviews.</p>
+    </section>
+
+    <!-- Metrics Cards (Analytics Dashboard) -->
+    <section class="metrics-grid" id="metrics-section">
+      <div class="metric-card">
+        <div class="metric-icon"><i data-lucide="school"></i></div>
+        <div>
+          <div class="metric-value" id="stat-total-colleges">0</div>
+          <div class="metric-label">Total Colleges</div>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon"><i data-lucide="map-pin"></i></div>
+        <div>
+          <div class="metric-value" id="stat-cities">0</div>
+          <div class="metric-label">Cities Represented</div>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon"><i data-lucide="book-open"></i></div>
+        <div>
+          <div class="metric-value" id="stat-courses">0</div>
+          <div class="metric-label">Total Courses</div>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon"><i data-lucide="star"></i></div>
+        <div>
+          <div class="metric-value" id="stat-avg-rating">0.0</div>
+          <div class="metric-label">Average Rating</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EXPLORE PANEL VIEW -->
+    <section id="explore-view" class="view-panel active">
+      <!-- Search and Sort Controls -->
+      <div class="search-controls-row">
+        <div class="search-bar-container">
+          <i data-lucide="search"></i>
+          <input type="text" id="search-input" placeholder="Search by college name, city, courses, or streams...">
+        </div>
+        <div class="sort-select-container">
+          <i data-lucide="sliders-horizontal"></i>
+          <select id="sort-select">
+            <option value="default">Sort: Recommended</option>
+            <option value="rating-desc">Rating: High to Low</option>
+            <option value="fees-asc">Fees: Low to High</option>
+            <option value="fees-desc">Fees: High to Low</option>
+            <option value="name-asc">Name: A to Z</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Layout Grid (Filters and Listings) -->
+      <div class="layout-grid">
+        <!-- Sidebar filters -->
+        <aside class="filters-sidebar">
+          <div class="filter-section-title">
+            <span>Filter Colleges</span>
+            <span class="clear-btn" id="clear-filters-btn">Clear All</span>
+          </div>
+
+          <!-- Filter Group: City -->
+          <div class="filter-group">
+            <label class="filter-label" for="city-filter">City</label>
+            <select id="city-filter" class="filter-select">
+              <option value="all">All Cities</option>
+            </select>
+          </div>
+
+          <!-- Filter Group: Stream -->
+          <div class="filter-group">
+            <label class="filter-label">Streams</label>
+            <div class="tags-list">
+              <label class="checkbox-label">
+                <input type="checkbox" name="stream" value="Engineering">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Engineering
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="stream" value="Medical">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Medical
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="stream" value="Management">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Management
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="stream" value="Science">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Science
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="stream" value="Law">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Law
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="stream" value="Humanities">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Humanities
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="stream" value="Arts">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Arts
+              </label>
+            </div>
+          </div>
+
+          <!-- Filter Group: Fees -->
+          <div class="filter-group">
+            <label class="filter-label" for="fee-slider">Max Annual Fee</label>
+            <div class="slider-container">
+              <input type="range" id="fee-slider" class="custom-slider" min="0" max="1500000" step="20000" value="1500000">
+              <div class="slider-val-row">
+                <span>₹0</span>
+                <span id="fee-slider-val" style="font-weight: 600; color: var(--accent-primary);">₹15L</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter Group: Rating -->
+          <div class="filter-group">
+            <label class="filter-label" for="rating-filter">Minimum Rating</label>
+            <select id="rating-filter" class="filter-select">
+              <option value="0">Any Rating</option>
+              <option value="4.5">★ 4.5 & above</option>
+              <option value="4.0">★ 4.0 & above</option>
+              <option value="3.5">★ 3.5 & above</option>
+            </select>
+          </div>
+        </aside>
+
+        <!-- Colleges Grid -->
+        <div class="colleges-grid" id="colleges-grid">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ADMIN PANEL VIEW -->
+    <section id="admin-view" class="view-panel">
+      <div class="admin-header-row">
+        <div>
+          <h2>Manage College Records</h2>
+          <p style="color: var(--text-secondary); font-size: 14px; margin-top: 4px;">Add, edit, or delete college data. All records are saved locally in the browser.</p>
+        </div>
+        <button class="admin-add-btn" id="admin-add-btn">
+          <i data-lucide="plus"></i> Add New College
+        </button>
+      </div>
+
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>College Details</th>
+              <th>Location</th>
+              <th>Primary Streams</th>
+              <th>Courses</th>
+              <th>Avg Rating</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="admin-table-body">
+            <!-- Populated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- COMPARISON DRAWER -->
+  <div class="compare-drawer" id="compare-drawer">
+    <div class="compare-drawer-content">
+      <div class="compare-list-wrapper">
+        <span class="compare-drawer-title">Compare Colleges (<span id="compare-count">0</span>/3)</span>
+        <div class="compare-items-row" id="compare-thumbs">
+          <!-- Added items will appear here -->
+        </div>
+      </div>
+      <div class="compare-drawer-actions">
+        <button class="compare-close-drawer" id="compare-clear-btn">Clear All</button>
+        <button class="compare-trigger-btn" id="compare-trigger-btn">Compare Now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLLEGE DETAIL VIEW MODAL -->
+  <div class="modal-overlay" id="detail-modal">
+    <div class="modal-container">
+      <button class="modal-close-btn" id="detail-modal-close"><i data-lucide="x"></i></button>
+      
+      <div class="detail-banner" id="detail-banner-theme">
+        <div class="detail-banner-content">
+          <div class="card-badge" id="detail-primary-stream">Stream</div>
+          <h2 class="detail-title" id="detail-name">College Name</h2>
+          <div class="detail-tags" id="detail-streams-row">
+            <!-- Dynamic stream badges -->
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-body">
+        <!-- Overview -->
+        <div>
+          <h3 class="detail-section-title"><i data-lucide="align-left"></i> About Institution</h3>
+          <p class="detail-desc" id="detail-description">College description text goes here.</p>
+        </div>
+
+        <hr class="section-divider">
+
+        <!-- Contact details -->
+        <div>
+          <h3 class="detail-section-title"><i data-lucide="phone"></i> Contact Details</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <i data-lucide="globe"></i>
+              <div class="info-item-label">Website</div>
+              <div class="info-item-val" id="detail-website"><a href="#" target="_blank">visit website</a></div>
+            </div>
+            <div class="info-item">
+              <i data-lucide="mail"></i>
+              <div class="info-item-label">Email</div>
+              <div class="info-item-val" id="detail-email">admissions@college.edu</div>
+            </div>
+            <div class="info-item">
+              <i data-lucide="phone-call"></i>
+              <div class="info-item-label">Phone</div>
+              <div class="info-item-val" id="detail-phone">+91-00-000000</div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="section-divider">
+
+        <!-- Courses details -->
+        <div>
+          <h3 class="detail-section-title"><i data-lucide="graduation-cap"></i> Courses Offered & Annual Fees</h3>
+          <div class="courses-table-wrapper">
+            <table class="courses-table">
+              <thead>
+                <tr>
+                  <th>Course Title</th>
+                  <th>Duration</th>
+                  <th style="text-align: right;">Annual Fee</th>
+                </tr>
+              </thead>
+              <tbody id="detail-courses-table-body">
+                <!-- Courses list dynamic -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <hr class="section-divider">
+
+        <!-- Facilities -->
+        <div>
+          <h3 class="detail-section-title"><i data-lucide="sparkles"></i> Campus Facilities</h3>
+          <div class="facilities-flex" id="detail-facilities-row">
+            <!-- Facility Badges -->
+          </div>
+        </div>
+
+        <hr class="section-divider">
+
+        <!-- Reviews and Ratings -->
+        <div>
+          <h3 class="detail-section-title"><i data-lucide="message-square"></i> Student Reviews & Feedback</h3>
+          <div class="reviews-section">
+            <div class="review-avg-block">
+              <div class="avg-number" id="detail-avg-rating-val">4.5</div>
+              <div class="avg-stars" id="detail-avg-stars">
+                <!-- Stars icons populated dynamically -->
+              </div>
+              <div class="avg-label">Based on <span id="detail-reviews-count">0</span> reviews</div>
+
+              <!-- Write review form inside same block for neat layout -->
+              <div class="review-form-row" style="width: 100%; margin-top: 20px; text-align: left;">
+                <h4 class="write-review-title">Submit a Review</h4>
+                
+                <div class="review-rating-select-row">
+                  <span style="font-size: 13px; color: var(--text-secondary);">Your Rating:</span>
+                  <div class="review-star-selector" id="form-star-selector">
+                    <span class="star-option" data-val="1"><i data-lucide="star"></i></span>
+                    <span class="star-option" data-val="2"><i data-lucide="star"></i></span>
+                    <span class="star-option" data-val="3"><i data-lucide="star"></i></span>
+                    <span class="star-option" data-val="4"><i data-lucide="star"></i></span>
+                    <span class="star-option" data-val="5"><i data-lucide="star"></i></span>
+                  </div>
+                </div>
+
+                <div class="review-input-group">
+                  <label for="review-author-input">Your Name</label>
+                  <input type="text" id="review-author-input" class="review-text-input" placeholder="e.g. Rahul Sharma">
+                </div>
+
+                <div class="review-input-group">
+                  <label for="review-comment-input">Review Details</label>
+                  <textarea id="review-comment-input" class="review-text-input" rows="2" placeholder="Tell us about the academics, placements or campus life..."></textarea>
+                </div>
+
+                <button class="review-submit-btn" id="review-submit-btn">Submit Review</button>
+              </div>
+            </div>
+
+            <!-- Existing reviews timeline -->
+            <div>
+              <h4 class="write-review-title" style="margin-bottom: 12px;">What Students Say</h4>
+              <div class="reviews-timeline" id="detail-reviews-timeline">
+                <!-- Individual review cards -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPARE MATRIX MODAL -->
+  <div class="modal-overlay" id="compare-modal">
+    <div class="modal-container compare-modal-container">
+      <button class="modal-close-btn" id="compare-modal-close"><i data-lucide="x"></i></button>
+      <div style="padding: 30px;">
+        <h2 style="font-size: 24px; font-family: var(--font-family-title); margin-bottom: 6px;"><i data-lucide="columns-3" style="color: var(--accent-primary); vertical-align: middle; margin-right: 8px;"></i> Compare Selected Institutions</h2>
+        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">Review direct comparisons of fee scales, structures, course programs, ratings, and features side by side.</p>
+        
+        <div class="compare-table-wrapper">
+          <table class="compare-matrix-table" id="compare-matrix-table">
+            <!-- Filled dynamically by JavaScript -->
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT COLLEGE MODAL -->
+  <div class="modal-overlay" id="admin-modal">
+    <div class="modal-container">
+      <button class="modal-close-btn" id="admin-modal-close"><i data-lucide="x"></i></button>
+      <div style="padding: 30px;">
+        <h2 id="admin-modal-title" style="font-size: 24px; font-family: var(--font-family-title); margin-bottom: 20px;">Add New College Listing</h2>
+        
+        <form id="admin-college-form">
+          <!-- Secret ID holder for edit cases -->
+          <input type="hidden" id="form-college-id" value="">
+
+          <!-- General details -->
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="form-name">College/University Full Name *</label>
+              <input type="text" id="form-name" class="form-input" required placeholder="e.g. Indian Institute of Technology Bombay">
+            </div>
+            <div class="form-group">
+              <label for="form-shortname">Short Name / Abbreviation *</label>
+              <input type="text" id="form-shortname" class="form-input" required placeholder="e.g. IIT Bombay">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="form-description">Description *</label>
+            <textarea id="form-description" class="form-textarea" required placeholder="Describe the institution, history, specialties..."></textarea>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="form-city">City *</label>
+              <input type="text" id="form-city" class="form-input" required placeholder="e.g. Mumbai">
+            </div>
+            <div class="form-group">
+              <label for="form-state">State *</label>
+              <input type="text" id="form-state" class="form-input" required placeholder="e.g. Maharashtra">
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="form-email">Contact Email *</label>
+              <input type="email" id="form-email" class="form-input" required placeholder="e.g. admissions@iitb.ac.in">
+            </div>
+            <div class="form-group">
+              <label for="form-phone">Contact Phone *</label>
+              <input type="text" id="form-phone" class="form-input" required placeholder="e.g. +91-22-25722545">
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="form-website">Website URL *</label>
+              <input type="url" id="form-website" class="form-input" required placeholder="e.g. https://www.iitb.ac.in">
+            </div>
+            <div class="form-group">
+              <label for="form-gradient">Visual Color Theme *</label>
+              <select id="form-gradient" class="form-select" required>
+                <option value="linear-gradient(135deg, #1e3a8a, #3b82f6)">Blue Gradient (Default)</option>
+                <option value="linear-gradient(135deg, #0f766e, #14b8a6)">Teal Gradient</option>
+                <option value="linear-gradient(135deg, #7c2d12, #ea580c)">Orange Gradient</option>
+                <option value="linear-gradient(135deg, #581c87, #a855f7)">Purple Gradient</option>
+                <option value="linear-gradient(135deg, #9d174d, #db2777)">Pink Gradient</option>
+                <option value="linear-gradient(135deg, #065f46, #059669)">Emerald Gradient</option>
+                <option value="linear-gradient(135deg, #b91c1c, #dc2626)">Crimson Gradient</option>
+                <option value="linear-gradient(135deg, #3730a3, #4f46e5)">Indigo Gradient</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Streams (Multiple selection checkboxes) -->
+          <div class="form-group">
+            <label style="margin-bottom: 8px; display: block;">Academic Streams (Select all that apply) *</label>
+            <div class="form-checkboxes-grid">
+              <label class="checkbox-label">
+                <input type="checkbox" name="form-stream" value="Engineering">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Engineering
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="form-stream" value="Medical">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Medical
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="form-stream" value="Management">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Management
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="form-stream" value="Science">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Science
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="form-stream" value="Law">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Law
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="form-stream" value="Humanities">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Humanities
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="form-stream" value="Arts">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Arts
+              </label>
+            </div>
+          </div>
+
+          <!-- Facilities (Multiple selection checkboxes) -->
+          <div class="form-group">
+            <label style="margin-bottom: 8px; display: block;">Campus Facilities</label>
+            <div class="form-checkboxes-grid">
+              <label class="checkbox-label">
+                <input type="checkbox" name="form-facility" value="Hostel">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Hostel
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="form-facility" value="Wi-Fi Campus">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Wi-Fi Campus
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="form-facility" value="Central Library">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Central Library
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="form-facility" value="Research Labs">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Research Labs
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="form-facility" value="Sports Complex">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Sports Complex
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="form-facility" value="Placement Cell">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Placement Cell
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="form-facility" value="Cafeteria">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Cafeteria
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="form-facility" value="Gym">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Gym
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="form-facility" value="Auditorium">
+                <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                Auditorium
+              </label>
+            </div>
+          </div>
+
+          <!-- Courses & Fees (Dynamic row builder) -->
+          <div class="form-group">
+            <label style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Course Offerings & Fees *</span>
+            </label>
+            <div class="dynamic-items-container" id="form-courses-container">
+              <!-- Dynamically added courses will go here -->
+            </div>
+            <button type="button" class="add-dynamic-row-btn" id="add-course-row-btn">
+              <i data-lucide="plus-circle"></i> Add Course Row
+            </button>
+          </div>
+
+          <!-- Form Buttons -->
+          <div class="form-submit-row">
+            <button type="button" class="form-btn form-btn-secondary" id="admin-form-cancel">Cancel</button>
+            <button type="submit" class="form-btn form-btn-primary" id="admin-form-submit">Save College</button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="main-footer">
+    <div class="footer-logo">
+      <i data-lucide="graduation-cap" style="font-size: 14px; vertical-align: middle; margin-right: 4px; display: inline-block;"></i>
+      CampusFinder India
+    </div>
+    <p>&copy; 2026 CampusFinder India Platform. Built with Vanilla Web Technologies for Academics.</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script defer src="data.js"></script>
+  <script defer src="app.min.js"></script>
+</body>
+</html>
+

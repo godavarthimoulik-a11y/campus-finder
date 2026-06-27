@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusFinder India | Search & Discover Colleges</title>
+  <meta name="description" content="Explore, compare, and shortlist top-tier colleges and universities in India. High-quality info, fees, reviews, and a complete admin control center.">
+  <link rel="canonical" href="http://localhost:8080/">
+  <meta name="theme-color" content="#071428">
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="preload" href="styles.min.css" as="style">
+  <link rel="stylesheet" href="styles.min.css">
+  <script defer src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-heading">Skip to content</a>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+  
+  <script>
+    // Load colleges data immediately
+    let allColleges = [];
+    let filteredColleges = [];
+    
+    async function loadColleges() {
+      try {
+        const res = await fetch('/api/colleges');
+        const data = await res.json();
+        allColleges = data;
+        filteredColleges = data;
+        renderColleges();
+        updateStats();
+        populateFilters();
+      } catch (e) {
+        console.error('Error loading colleges:', e);
+        document.getElementById('colleges-grid').innerHTML = '<p style="color: red; padding: 20px;">Error loading colleges data. Please refresh.</p>';
+      }
+    }
+    
+    function renderColleges() {
+      const grid = document.getElementById('colleges-grid');
+      grid.innerHTML = filteredColleges.length ? filteredColleges.map(college => `
+        <div class="college-card">
+          <div class="card-header" style="background: ${college.gradient || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}">
+            <div class="card-badge">${college.streams || 'Engineering'}</div>
+            <button class="card-compare-btn" onclick="toggleCompare(${college.id})" title="Compare">
+              <i data-lucide="scale-3d"></i>
+            </button>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">${college.name}</h3>
+            <p class="card-location"><i data-lucide="map-pin" style="width: 16px; height: 16px;"></i> ${college.city}, ${college.state}</p>
+            <div class="card-rating">
+              <span class="stars">${'★'.repeat(Math.round(college.avg_rating))}${'☆'.repeat(5-Math.round(college.avg_rating))}</span>
+              <span class="rating-num">${college.avg_rating.toFixed(1)}</span>
+              <span class="reviews-count">(${college.reviews_count} reviews)</span>
+            </div>
+          </div>
+          <button class="card-action-btn" onclick="viewCollege(${college.id})">
+            View Details <i data-lucide="arrow-right" style="width: 16px; height: 16px; margin-left: 4px;"></i>
+          </button>
+        </div>
+      `).join('') : '<p style="padding: 40px; text-align: center; color: var(--text-secondary);">No colleges found matching your criteria.</p>';
+      
+      // Reinitialize lucide icons
+      if(window.lucide) lucide.createIcons();
+    }
+    
+    function updateStats() {
+      const stats = {
+        colleges: allColleges.length,
+        cities: new Set(allColleges.map(c => c.city)).size,
+        avgRating: (allColleges.reduce((sum, c) => sum + c.avg_rating, 0) / allColleges.length).toFixed(1)
+      };
+      
+      document.getElementById('stat-total-colleges').textContent = stats.colleges;
+      document.getElementById('stat-cities').textContent = stats.cities;
+      document.getElementById('stat-avg-rating').textContent = stats.avgRating;
+      
+      // Calculate total courses
+      fetch('/api/colleges')
+        .then(r => r.json())
+        .then(colleges => {
+          let totalCourses = 0;
+          Promise.all(colleges.map(c => fetch(`/api/colleges/${c.id}`).then(r => r.json())))
+            .then(details => {
+              totalCourses = details.reduce((sum, d) => sum + (d.courses ? d.courses.length : 0), 0);
+              document.getElementById('stat-courses').textContent = totalCourses;
+            });
+        });
+    }
+    
+    function populateFilters() {
+      const cities = [...new Set(allColleges.map(c => c.city))].sort();
+      const citySelect = document.getElementById('city-filter');
+      cities.forEach(city => {
+        const option = document.createElement('option');
+        option.value = city;
+        option.textContent = city;
+        citySelect.appendChild(option);
+      });
+    }
+    
+    function viewCollege(id) {
+      window.location.hash = `college/${id}`;
+      loadCollegeDetail(id);
+    }
+    
+    async function loadCollegeDetail(id) {
+      try {
+        const res = await fetch(`/api/colleges/${id}`);
+        const { college, courses, reviews } = await res.json();
+        
+        document.getElementById('detail-name').textContent = college.name;
+        document.getElementById('detail-description').textContent = college.description;
+        document.getElementById('detail-website').innerHTML = `<a href="${college.website}" target="_blank">${college.website}</a>`;
+        document.getElementById('detail-email').textContent = college.email;
+        document.getElementById('detail-phone').textContent = college.phone;
+        document.getElementById('detail-banner-theme').style.background = college.gradient;
+        
+        const coursesHtml = courses.length ? courses.map(c => `
+          <tr>
+            <td>${c.title}</td>
+            <td>${c.duration}</td>
+            <td style="text-align: right;">₹${(c.annual_fee || 0).toLocaleString('en-IN')}</td>
+          </tr>
+        `).join('') : '<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">No courses listed</td></tr>';
+        
+        document.querySelector('.courses-table tbody').innerHTML = coursesHtml;
+        
+        const reviewsHtml = reviews.length ? reviews.map(r => `
+          <div class="review-item">
+            <div class="review-header">
+              <span class="review-author">${r.author}</span>
+              <span class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+            </div>
+            <p class="review-text">${r.comment}</p>
+          </div>
+        `).join('') : '<p style="color: var(--text-secondary);">No reviews yet.</p>';
+        
+        document.getElementById('reviews-container').innerHTML = reviewsHtml;
+        
+        document.getElementById('detail-modal').classList.add('open');
+      } catch (e) {
+        console.error('Error loading college details:', e);
+      }
+    }
+    
+    function toggleCompare(id) {
+      console.log('Compare:', id);
+    }
+    
+    // Event listeners
+    document.getElementById('search-input').addEventListener('keyup', function() {
+      const q = this.value.toLowerCase();
+      filteredColleges = allColleges.filter(c => 
+        c.name.toLowerCase().includes(q) ||
+        c.city.toLowerCase().includes(q) ||
+This file is large; created. (truncated)
+</body>
+</html>
