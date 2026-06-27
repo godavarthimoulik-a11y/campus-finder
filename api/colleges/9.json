@@ -1,0 +1,42 @@
+{
+  "college": {
+    "id": 9,
+    "name": "Anna University",
+    "shortname": "Anna University",
+    "description": "Premier technological university in South India",
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "email": "registrar@annauniv.edu",
+    "phone": "+91-44-2235-8000",
+    "website": "https://www.annauniv.edu",
+    "gradient": "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+    "streams": [
+      "Engineering, Technology"
+    ],
+    "facilities": [
+      "State-of-the-art labs, Design centers, Placement cell"
+    ],
+    "avg_rating": 5,
+    "reviews_count": 1,
+    "created_at": "2026-06-27 15:16:16"
+  },
+  "courses": [
+    {
+      "id": 13,
+      "college_id": 9,
+      "title": "B.E in Electrical Engineering",
+      "duration": "4 years",
+      "annual_fee": 8500
+    }
+  ],
+  "reviews": [
+    {
+      "id": 10,
+      "college_id": 9,
+      "author": "Neha Singh",
+      "rating": 5,
+      "comment": "Top-notch engineering programs with excellent placements.",
+      "created_at": "2026-06-27 15:16:16"
+    }
+  ]
+}

@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function fetchColleges(){
     showLoader();
     try{
-      const res = await fetch('/api/colleges');
+      const res = await fetch('api/colleges.json');
       if(!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
       state.colleges = Array.isArray(data) ? data : [];
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function openDetailModal(id){
     try{
-      const res = await fetch(`/api/colleges/${id}`);
+      const res = await fetch(`api/colleges/${id}.json`);
       if(!res.ok) throw new Error('Failed to load details');
       const data = await res.json();
       populateDetailModal(data);

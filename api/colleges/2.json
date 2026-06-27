@@ -1,0 +1,49 @@
+{
+  "college": {
+    "id": 2,
+    "name": "Indian Institute of Technology Bombay",
+    "shortname": "IIT Bombay",
+    "description": "Top-ranked engineering university with strong industry connections",
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "email": "admissions@iitb.ac.in",
+    "phone": "+91-22-2576-7000",
+    "website": "https://www.iitb.ac.in",
+    "gradient": "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+    "streams": [
+      "Engineering, Management, Research"
+    ],
+    "facilities": [
+      "Advanced computing labs, Hostels, Placement opportunities"
+    ],
+    "avg_rating": 5,
+    "reviews_count": 1,
+    "created_at": "2026-06-27 15:16:16"
+  },
+  "courses": [
+    {
+      "id": 3,
+      "college_id": 2,
+      "title": "B.Tech in Mechanical Engineering",
+      "duration": "4 years",
+      "annual_fee": 8000
+    },
+    {
+      "id": 4,
+      "college_id": 2,
+      "title": "MBA",
+      "duration": "2 years",
+      "annual_fee": 25000
+    }
+  ],
+  "reviews": [
+    {
+      "id": 3,
+      "college_id": 2,
+      "author": "Amit Patel",
+      "rating": 5,
+      "comment": "Amazing campus life and industry collaborations. Highly recommended!",
+      "created_at": "2026-06-27 15:16:16"
+    }
+  ]
+}

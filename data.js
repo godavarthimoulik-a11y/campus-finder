@@ -7,7 +7,7 @@ window.appState = {
   
   async loadColleges() {
     try {
-      const response = await fetch('/api/colleges');
+      const response = await fetch('api/colleges.json');
       if (!response.ok) throw new Error('Failed to fetch colleges');
       this.colleges = await response.json();
       return this.colleges;
@@ -19,7 +19,7 @@ window.appState = {
   
   async getCollegeDetails(id) {
     try {
-      const response = await fetch(`/api/colleges/${id}`);
+      const response = await fetch(`api/colleges/${id}.json`);
       if (!response.ok) throw new Error('College not found');
       return await response.json();
     } catch (error) {

@@ -1,0 +1,57 @@
+{
+  "college": {
+    "id": 1,
+    "name": "Indian Institute of Technology Delhi",
+    "shortname": "IIT Delhi",
+    "description": "Premier engineering institute, consistently ranked among top universities in India",
+    "city": "New Delhi",
+    "state": "Delhi",
+    "email": "admissions@iitd.ac.in",
+    "phone": "+91-11-2659-1001",
+    "website": "https://www.iitd.ac.in",
+    "gradient": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    "streams": [
+      "Engineering, Research"
+    ],
+    "facilities": [
+      "World-class laboratories, Sports complex, Wi-Fi campus"
+    ],
+    "avg_rating": 4.5,
+    "reviews_count": 2,
+    "created_at": "2026-06-27 15:16:16"
+  },
+  "courses": [
+    {
+      "id": 1,
+      "college_id": 1,
+      "title": "B.Tech in Computer Science",
+      "duration": "4 years",
+      "annual_fee": 8000
+    },
+    {
+      "id": 2,
+      "college_id": 1,
+      "title": "M.Tech in AI & ML",
+      "duration": "2 years",
+      "annual_fee": 12000
+    }
+  ],
+  "reviews": [
+    {
+      "id": 1,
+      "college_id": 1,
+      "author": "Raj Kumar",
+      "rating": 5,
+      "comment": "Excellent infrastructure and world-class faculty. Great placement opportunities.",
+      "created_at": "2026-06-27 15:16:16"
+    },
+    {
+      "id": 2,
+      "college_id": 1,
+      "author": "Priya Singh",
+      "rating": 4,
+      "comment": "Good academic environment but hostel facilities could be better.",
+      "created_at": "2026-06-27 15:16:16"
+    }
+  ]
+}

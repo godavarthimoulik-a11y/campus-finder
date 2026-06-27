@@ -1,0 +1,132 @@
+[
+  {
+    "id": 2,
+    "name": "Indian Institute of Technology Bombay",
+    "shortname": "IIT Bombay",
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "avg_rating": 5,
+    "reviews_count": 1,
+    "gradient": "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+    "streams": [
+      "Engineering, Management, Research"
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Indian Institute of Technology Kanpur",
+    "shortname": "IIT Kanpur",
+    "city": "Kanpur",
+    "state": "Uttar Pradesh",
+    "avg_rating": 5,
+    "reviews_count": 1,
+    "gradient": "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+    "streams": [
+      "Engineering, Technology, Research"
+    ]
+  },
+  {
+    "id": 7,
+    "name": "Banaras Hindu University",
+    "shortname": "BHU",
+    "city": "Varanasi",
+    "state": "Uttar Pradesh",
+    "avg_rating": 5,
+    "reviews_count": 1,
+    "gradient": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    "streams": [
+      "Engineering, Medicine, Arts, Science, Law"
+    ]
+  },
+  {
+    "id": 9,
+    "name": "Anna University",
+    "shortname": "Anna University",
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "avg_rating": 5,
+    "reviews_count": 1,
+    "gradient": "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+    "streams": [
+      "Engineering, Technology"
+    ]
+  },
+  {
+    "id": 10,
+    "name": "Indian Institute of Science",
+    "shortname": "IISc",
+    "city": "Bangalore",
+    "state": "Karnataka",
+    "avg_rating": 5,
+    "reviews_count": 1,
+    "gradient": "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
+    "streams": [
+      "Research, Engineering, Science"
+    ]
+  },
+  {
+    "id": 1,
+    "name": "Indian Institute of Technology Delhi",
+    "shortname": "IIT Delhi",
+    "city": "New Delhi",
+    "state": "Delhi",
+    "avg_rating": 4.5,
+    "reviews_count": 2,
+    "gradient": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    "streams": [
+      "Engineering, Research"
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Indian Institute of Technology Madras",
+    "shortname": "IIT Madras",
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "avg_rating": 4,
+    "reviews_count": 1,
+    "gradient": "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+    "streams": [
+      "Engineering, Research, Consultancy"
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Delhi University",
+    "shortname": "DU",
+    "city": "New Delhi",
+    "state": "Delhi",
+    "avg_rating": 4,
+    "reviews_count": 1,
+    "gradient": "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
+    "streams": [
+      "Arts, Science, Commerce, Law"
+    ]
+  },
+  {
+    "id": 6,
+    "name": "Jawaharlal Nehru University",
+    "shortname": "JNU",
+    "city": "New Delhi",
+    "state": "Delhi",
+    "avg_rating": 4,
+    "reviews_count": 1,
+    "gradient": "linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%)",
+    "streams": [
+      "Humanities, Social Sciences, Science, Languages"
+    ]
+  },
+  {
+    "id": 8,
+    "name": "Presidency University Kolkata",
+    "shortname": "Presidency",
+    "city": "Kolkata",
+    "state": "West Bengal",
+    "avg_rating": 4,
+    "reviews_count": 1,
+    "gradient": "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
+    "streams": [
+      "Arts, Science, Commerce"
+    ]
+  }
+]

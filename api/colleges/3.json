@@ -1,0 +1,49 @@
+{
+  "college": {
+    "id": 3,
+    "name": "Indian Institute of Technology Madras",
+    "shortname": "IIT Madras",
+    "description": "Prestigious institute known for research and innovation",
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "email": "admissions@iitm.ac.in",
+    "phone": "+91-44-2257-1000",
+    "website": "https://www.iitm.ac.in",
+    "gradient": "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+    "streams": [
+      "Engineering, Research, Consultancy"
+    ],
+    "facilities": [
+      "Modern laboratories, Workshops, Research centers"
+    ],
+    "avg_rating": 4,
+    "reviews_count": 1,
+    "created_at": "2026-06-27 15:16:16"
+  },
+  "courses": [
+    {
+      "id": 5,
+      "college_id": 3,
+      "title": "B.Tech in Electronics",
+      "duration": "4 years",
+      "annual_fee": 8000
+    },
+    {
+      "id": 6,
+      "college_id": 3,
+      "title": "Ph.D in Engineering",
+      "duration": "5-6 years",
+      "annual_fee": 0
+    }
+  ],
+  "reviews": [
+    {
+      "id": 4,
+      "college_id": 3,
+      "author": "Sarah Khan",
+      "rating": 4,
+      "comment": "Great research opportunities and supportive faculty.",
+      "created_at": "2026-06-27 15:16:16"
+    }
+  ]
+}

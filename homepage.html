@@ -25,7 +25,7 @@
     
     async function loadColleges() {
       try {
-        const res = await fetch('/api/colleges');
+        const res = await fetch('api/colleges.json');
         const data = await res.json();
         allColleges = data;
         filteredColleges = data;
@@ -79,11 +79,11 @@
       document.getElementById('stat-avg-rating').textContent = stats.avgRating;
       
       // Calculate total courses
-      fetch('/api/colleges')
+      fetch('api/colleges.json')
         .then(r => r.json())
         .then(colleges => {
           let totalCourses = 0;
-          Promise.all(colleges.map(c => fetch(`/api/colleges/${c.id}`).then(r => r.json())))
+          Promise.all(colleges.map(c => fetch(`api/colleges/${c.id}.json`).then(r => r.json())))
             .then(details => {
               totalCourses = details.reduce((sum, d) => sum + (d.courses ? d.courses.length : 0), 0);
               document.getElementById('stat-courses').textContent = totalCourses;
@@ -109,7 +109,7 @@
     
     async function loadCollegeDetail(id) {
       try {
-        const res = await fetch(`/api/colleges/${id}`);
+        const res = await fetch(`api/colleges/${id}.json`);
         const { college, courses, reviews } = await res.json();
         
         document.getElementById('detail-name').textContent = college.name;
